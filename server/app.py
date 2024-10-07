@@ -14,13 +14,29 @@ migrate = Migrate(app, db)
 
 db.init_app(app)
 
-@app.route('/messages')
+@app.route('/')
+def index():
+    return "<h2>Welcome to ChatterBox</h2>"
+
+@app.route('/messages', methods = ["GET", "POST"])
 def messages():
-    messages = [message.to_dict() for message in Message.query.all()]
 
-    return make_response(messages, 200)
+    if request.method == 'GET':
+       messages = [message.to_dict() for message in Message.query.all()]
 
-@app.route('/messages/<int:id>')
+       return make_response(messages, 200)
+    
+    elif request.method == 'POST':
+        new_message = Message(
+           body = request.json.get("body"),
+           username = request.json.get("username"),
+        )
+        db.session.add(new_message)
+        db.session.commit()
+
+        return make_response(new_message.to_dict(), 201)
+
+@app.route('/messages/<int:id>', methods = ['GET', 'PATCH', 'DELETE'])
 def messages_by_id(id):
     message = Message.query.filter(Message.id == id).first()
 
@@ -40,6 +56,6 @@ def messages_by_id(id):
         db.session.commit()
 
         return({"message": "Message deleted successfully."}, 200)
-        
+
 if __name__ == '__main__':
     app.run(port=5555)
