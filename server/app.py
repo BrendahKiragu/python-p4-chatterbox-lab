@@ -16,11 +16,30 @@ db.init_app(app)
 
 @app.route('/messages')
 def messages():
-    return ''
+    messages = [message.to_dict() for message in Message.query.all()]
+
+    return make_response(messages, 200)
 
 @app.route('/messages/<int:id>')
 def messages_by_id(id):
-    return ''
+    message = Message.query.filter(Message.id == id).first()
 
+    if request.method == "GET":
+        return make_response(message.to_dict(), 200)
+    
+    elif request.method == "PATCH":
+        body = request.json.get('body')
+        
+        if body:
+            message.body = body
+            db.session.commit()
+        return make_response(message.to_dict(), 200)
+    
+    elif request.method == "DELETE":
+        db.session.delete(message)
+        db.session.commit()
+
+        return({"message": "Message deleted successfully."}, 200)
+        
 if __name__ == '__main__':
     app.run(port=5555)
